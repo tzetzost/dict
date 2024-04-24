@@ -1,9 +1,13 @@
+CREATE DATABASE IF NOT EXISTS dict_app;
 
-CREATE TABLE Terms (
+USE dict_app;
+
+CREATE TABLE IF NOT EXISTS Terms (
     id INT NOT NULL AUTO_INCREMENT,
     term VARCHAR(255) NOT NULL,
     description VARCHAR(1000),
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    UNIQUE (term)
 );
 
 INSERT INTO Terms (term, description) VALUES
