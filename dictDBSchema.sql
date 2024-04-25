@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS dict_app;
 
 USE dict_app;
 
-CREATE TABLE IF NOT EXISTS Terms (
+CREATE TABLE IF NOT EXISTS terms (
     id INT NOT NULL AUTO_INCREMENT,
     term VARCHAR(255) NOT NULL,
     description VARCHAR(1000),
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS Terms (
     UNIQUE (term)
 );
 
-INSERT INTO Terms (term, description) VALUES
+INSERT INTO terms (term, description) VALUES
 ('PNR', 'Passenger Name Record'),
 ('IATA', 'The International Air Transport Association'),
 ('IFG','IATA Financial Gateway'),
