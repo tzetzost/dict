@@ -1,0 +1,65 @@
+@startuml
+!theme mars
+'!theme sunlust
+'!theme sketchy-outline
+'!theme carbon-gray
+'!theme vibrant
+
+skinparam componentStyle rectangle
+
+interface "Payments API" as PayAPI
+
+
+node "=OOM payments" {
+
+  component APIService #lightgreen [
+    ==API service
+    ====
+    create payments
+  ]
+
+component DAOModule [
+    ===DAO module
+    ====
+    DB schema & migrations
+    entities
+    repositories
+  ]
+
+  component BatchService #lightblue[
+    ==Batch service
+    ====
+    job updating payment states
+  ]
+
+  PayAPI - APIService : provides
+  APIService ..>  DAOModule  : use
+  BatchService ..>  DAOModule  : use
+}
+
+database "=Payments DB" as DB {
+  node {
+    [Payment records]
+  }
+}
+
+node "=IATA"{
+  interface "IFG API" as IFGAPI
+  [IATA Financial gateway] as IATAIFG
+  IATAIFG - IFGAPI
+}
+
+agent "==Payment events\n====edit\n====update" as payevent
+
+payevent --> PayAPI : JSON messages
+
+note top of DB
+  PostreSQL
+end note
+
+BatchService <-[thickness=3,#blue]- [Payment records] : ====update
+APIService -[thickness=3,#green]-> [Payment records] : ====create\nupdate
+APIService -[thickness=3,#orange]-> IFGAPI : create
+BatchService -[thickness=3,#orange]-> IFGAPI : update
+
+@enduml
