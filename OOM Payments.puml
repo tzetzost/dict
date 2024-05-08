@@ -1,0 +1,55 @@
+@startuml
+skinparam componentStyle rectangle
+
+interface "Payments API" as PayAPI
+
+
+node "OOM payments" {
+
+  component APIService #aec5e8[
+    API service
+    ====
+ create payments
+  ]
+
+component DAOModule #aec5e8 [
+    DAO module
+    ====
+    DB schema & migrations
+    entities
+    repositories
+  ]
+
+  component BatchService #aec5e8 [
+    Batch service
+    ====
+    update payment state job
+  ]
+
+  PayAPI - APIService
+  APIService ..>  DAOModule  : use
+  BatchService ..>  DAOModule  : use
+}
+
+database "Payments DB" as DB {
+  node {
+    [Payment records]
+  }
+}
+
+node "IATA"{
+  interface "IFG API" as IFGAPI
+  [IATA Financial gateway] as IATAIFG
+  IATAIFG - IFGAPI
+}
+
+note top of DB
+  PostreSQL
+end note
+
+BatchService --> [Payment records]
+APIService --> [Payment records]
+APIService --> IFGAPI : create payment
+BatchService --> IFGAPI : update payment state
+
+@enduml
