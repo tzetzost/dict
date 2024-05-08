@@ -5,12 +5,12 @@
 '!theme carbon-gray
 '!theme vibrant
 
-skinparam componentStyle rectangle
+'skinparam componentStyle rectangle
 
 interface "Payments API" as PayAPI
 
 
-node "=OOM payments" {
+node "=Payment Gateway" {
 
   component APIService #lightgreen [
     ==API service
@@ -19,7 +19,7 @@ node "=OOM payments" {
   ]
 
 component DAOModule [
-    ===DAO module
+    ===DAO module for [Payment Repo]
     ====
     DB schema & migrations
     entities
@@ -27,9 +27,10 @@ component DAOModule [
   ]
 
   component BatchService #lightblue[
-    ==Batch service
+    =Payment Submitter
     ====
-    job updating payment states
+    scheduled cron job
+    updating payment states
   ]
 
   PayAPI - APIService : provides
@@ -37,9 +38,9 @@ component DAOModule [
   BatchService ..>  DAOModule  : use
 }
 
-database "=Payments DB" as DB {
+database "=PostgreSQL" as DB {
   node {
-    [Payment records]
+    [Payment Repo]
   }
 }
 
@@ -49,17 +50,28 @@ node "=IATA"{
   IATAIFG - IFGAPI
 }
 
-agent "==Payment events\n====edit\n====update" as payevent
+agent "==OOM orchestrator\n====authorize\n====submit" as payevent
 
 payevent --> PayAPI : JSON messages
 
-note top of DB
-  PostreSQL
+note right of APIService
+  ====service instance
 end note
 
-BatchService <-[thickness=3,#blue]- [Payment records] : ====update
-APIService -[thickness=3,#green]-> [Payment records] : ====create\nupdate
-APIService -[thickness=3,#orange]-> IFGAPI : create
-BatchService -[thickness=3,#orange]-> IFGAPI : update
+note right of BatchService
+  ====service instance
+end note
+
+note right of DAOModule
+  ====JAR module
+end note
+
+BatchService <-[thickness=3,#blue]- [Payment Repo] : ====Get pending payments
+BatchService -[thickness=3,#blue]-> [Payment Repo] : ====Update payment state
+APIService -[thickness=3,#green]-> [Payment Repo] : ====Insert payment authorization
+APIService <-[thickness=3,#green]-> [Payment Repo] : ====Update for submission
+
+APIService -[thickness=3,#green]-> IFGAPI : paymentAuthorize - API 1
+BatchService -[thickness=3,#blue]-> IFGAPI : order - API 2
 
 @enduml
