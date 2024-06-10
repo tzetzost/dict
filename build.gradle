@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.2.3'
 	id 'io.spring.dependency-management' version '1.1.4'
+	id "org.springdoc.openapi-gradle-plugin" version "1.8.0"
 }
 
 group = 'org.tstefanov'
@@ -19,6 +20,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'mysql:mysql-connector-java:8.0.28'
+
+	implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${openApiUiVersion}"
+	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${openApiUiVersion}"
+
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 //	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -26,4 +31,10 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks {
+	forkedSpringBootRun {
+		doNotTrackState("See https://github.com/springdoc/springdoc-openapi-gradle-plugin/issues/102")
+	}
 }
