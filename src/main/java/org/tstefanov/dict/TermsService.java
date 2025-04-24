@@ -35,12 +35,10 @@ public class TermsService
         return termsRepository.save(t);
     }
 
-    public List<TermSummary> searchTerms(String query) {
-        return termsRepository.findByTermStartingWithIgnoreCase(query)
-                .stream()
+    public org.springframework.data.domain.Page<TermSummary> searchTerms(String query, org.springframework.data.domain.Pageable pageable) {
+        return termsRepository.findByTermStartingWithIgnoreCase(query, pageable)
                 .map(term -> new TermSummary(term.getTerm(),
-                        Optional.ofNullable(term.getDescription()).orElse("No description")))
-                .toList();
+                        Optional.ofNullable(term.getDescription()).orElse("No description")));
     }
 
 }

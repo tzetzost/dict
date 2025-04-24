@@ -7,32 +7,52 @@ export default function SearchPage() {
   const [term, setTerm] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(() => {
+    const stored = localStorage.getItem('searchPageSize');
+    return stored ? parseInt(stored) : 50;
+  });
+  const [totalCount, setTotalCount] = useState(0);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const fetchSuggestions = (query) => {
+  const fetchSuggestions = React.useCallback((query, page = 0, pageSizeOverride = pageSize) => {
     if (query.length > 0) {
       axios
-        .get(`/api/terms/search?q=${query}`)
-        .then((res) => setSuggestions(res.data))
-        .catch(() => setSuggestions([]));
+        .get(`/api/terms/search?q=${query}`, {
+          headers: {
+            'X-Page': page,
+            'X-Page-Size': pageSizeOverride
+          }
+        })
+        .then((res) => {
+          setSuggestions(res.data);
+          const total = res.headers['x-total-count'];
+          setTotalCount(total ? parseInt(total) : 0);
+        })
+        .catch(() => {
+          setSuggestions([]);
+          setTotalCount(0);
+        });
     } else {
       setSuggestions([]);
+      setTotalCount(0);
     }
-  };
+  }, [pageSize]);
 
   useEffect(() => {
     const q = searchParams.get('q') || '';
     setTerm(q);
     setError(null);
+    setPage(0);
   }, [searchParams]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      fetchSuggestions(term);
+      fetchSuggestions(term, page, pageSize);
     }, 300);
     return () => clearTimeout(delayDebounce);
-  }, [term]);
+  }, [term, page, pageSize, fetchSuggestions]);
 
   const handleSelect = (selectedTerm) => {
     const selectedSuggestion = suggestions.find(s => s.term === selectedTerm);
@@ -72,11 +92,13 @@ export default function SearchPage() {
         setTerm("");
         setSuggestions([]);
         setError(null);
+        setPage(0);
       }}>Clear</button>
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {}
       {suggestions.length > 0 && (
+        <>
         <ul style={{ listStyle: "none", padding: 0 }}>
             {suggestions.map((s) => (
               <li
@@ -95,12 +117,41 @@ export default function SearchPage() {
               </li>
             ))}
         </ul>
+        <div style={{ marginTop: '1rem' }}>
+          <button onClick={() => setPage(page - 1)} disabled={page === 0}>Prev</button>
+          {Array.from({ length: Math.ceil(totalCount / pageSize) }, (_, i) => (
+            <button
+              key={i}
+              style={{ margin: '0 2px', fontWeight: i === page ? 'bold' : 'normal' }}
+              onClick={() => setPage(i)}
+              disabled={i === page}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button onClick={() => setPage(page + 1)} disabled={(page + 1) * pageSize >= totalCount}>Next</button>
+        </div>
+        </>
       )}
       {suggestions.length === 0 && term.length > 0 && (
         <button style={{ marginTop: "1rem" }} onClick={() => navigate("/create", { state: { term } })}>
           Create
         </button>
       )}
+      <select
+        style={{ marginTop: "1rem" }}
+        value={pageSize}
+        onChange={e => {
+          const newSize = Number(e.target.value);
+          setPageSize(newSize);
+          localStorage.setItem('searchPageSize', newSize);
+          setPage(0);
+        }}
+      >
+        {[25, 50, 100].map(size => (
+          <option key={size} value={size}>{size} per page</option>
+        ))}
+      </select>
     </div>
   );
 }

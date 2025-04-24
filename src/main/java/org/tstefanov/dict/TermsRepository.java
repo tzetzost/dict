@@ -12,5 +12,6 @@ public interface TermsRepository extends JpaRepository<Term, Long>
 
     Optional<Term> findByTerm(String term);
     List<Term> findByTermStartingWithIgnoreCase(String prefix);
+    org.springframework.data.domain.Page<Term> findByTermStartingWithIgnoreCase(String prefix, org.springframework.data.domain.Pageable pageable);
 
 }

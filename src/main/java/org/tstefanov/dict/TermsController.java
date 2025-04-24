@@ -43,8 +43,15 @@ public class TermsController
     }
 
     @GetMapping("/search")
-    public List<TermSummary> searchTerms(@RequestParam("q") String query) {
-        return termsService.searchTerms(query);
+    public ResponseEntity<List<TermSummary>> searchTerms(
+            @RequestParam("q") String query,
+            @RequestHeader(value = "X-Page", required = false, defaultValue = "0") int page,
+            @RequestHeader(value = "X-Page-Size", required = false, defaultValue = "50") int pageSize) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, pageSize);
+        org.springframework.data.domain.Page<TermSummary> pageResult = termsService.searchTerms(query, pageable);
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(pageResult.getTotalElements()))
+                .body(pageResult.getContent());
     }
 
 }
