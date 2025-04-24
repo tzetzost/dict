@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class TermsService
@@ -19,9 +18,21 @@ public class TermsService
         return termsRepository.findByTerm(term);
     }
 
-    public Term saveTerm(String term, String description)
-    {
+    public Term createTerm(String term, String description) {
+        if (termsRepository.findByTerm(term).isPresent()) {
+            throw new IllegalArgumentException("Term already exists");
+        }
         return termsRepository.save(new Term(term, description));
+    }
+
+    public Term updateTerm(String term, String description) {
+        Optional<Term> existing = termsRepository.findByTerm(term);
+        if (existing.isEmpty()) {
+            throw new IllegalArgumentException("Term not found");
+        }
+        Term t = existing.get();
+        t.setDescription(description);
+        return termsRepository.save(t);
     }
 
     public List<TermSummary> searchTerms(String query) {

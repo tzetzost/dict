@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { fetchTerm } from "../api/terms";
 import axios from "axios";
 
@@ -8,32 +8,48 @@ export default function SearchPage() {
   const [suggestions, setSuggestions] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const fetchSuggestions = (query) => {
+    if (query.length > 0) {
+      axios
+        .get(`/api/terms/search?q=${query}`)
+        .then((res) => setSuggestions(res.data))
+        .catch(() => setSuggestions([]));
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  useEffect(() => {
+    const q = searchParams.get('q') || '';
+    setTerm(q);
+    setError(null);
+  }, [searchParams]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      if (term.length > 0) {
-        axios
-          .get(`/api/terms/search?q=${term}`)
-          .then((res) => setSuggestions(res.data))
-          .catch(() => setSuggestions([]));
-      } else {
-        setSuggestions([]);
-      }
+      fetchSuggestions(term);
     }, 300);
-
     return () => clearTimeout(delayDebounce);
   }, [term]);
 
   const handleSelect = (selectedTerm) => {
+    const selectedSuggestion = suggestions.find(s => s.term === selectedTerm);
     setTerm(selectedTerm);
     setSuggestions([]);
-    navigate(`/edit/${selectedTerm}`);
+    navigate(`/edit/${selectedTerm}`, { state: { searchQuery: term, termData: selectedSuggestion } });
   };
 
   const handleSearch = async () => {
     try {
-      await fetchTerm(term);
-      navigate(`/edit/${term}`);
+      const found = suggestions.find(s => s.term === term);
+      if (found) {
+        navigate(`/edit/${term}`, { state: { searchQuery: term, termData: found } });
+      } else {
+        await fetchTerm(term);
+        navigate(`/edit/${term}`, { state: { searchQuery: term } });
+      }
     } catch (err) {
       setError("Term not found");
     }
@@ -52,6 +68,11 @@ export default function SearchPage() {
         autoComplete="off"
       />
       <button onClick={handleSearch}>Search</button>
+      <button style={{ marginLeft: "0.5rem" }} onClick={() => {
+        setTerm("");
+        setSuggestions([]);
+        setError(null);
+      }}>Clear</button>
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {}
@@ -74,6 +95,11 @@ export default function SearchPage() {
               </li>
             ))}
         </ul>
+      )}
+      {suggestions.length === 0 && term.length > 0 && (
+        <button style={{ marginTop: "1rem" }} onClick={() => navigate("/create", { state: { term } })}>
+          Create
+        </button>
       )}
     </div>
   );

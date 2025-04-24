@@ -23,10 +23,23 @@ public class TermsController
     }
 
     @PostMapping
-    public ResponseEntity<Term> saveTerm(@RequestBody Term term)
-    {
-        Term savedTerm = termsService.saveTerm(term.getTerm(), term.getDescription());
-        return ResponseEntity.ok(savedTerm);
+    public ResponseEntity<Term> createTerm(@RequestBody Term term) {
+        try {
+            Term created = termsService.createTerm(term.getTerm(), term.getDescription());
+            return ResponseEntity.status(201).body(created);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(409).build();
+        }
+    }
+
+    @PutMapping("/{term}")
+    public ResponseEntity<Term> updateTerm(@PathVariable String term, @RequestBody Term termBody) {
+        try {
+            Term updated = termsService.updateTerm(term, termBody.getDescription());
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/search")
