@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload Progress</title>
+</head>
+<body>
+<h1>Upload a File</h1>
+<input type="file" id="fileInput" />
+<button onclick="uploadFile()">Upload</button>
+<br/><br/>
+<!-- The progress bar -->
+<progress id="progressBar" value="0" max="100" style="width: 300px;"></progress>
+<p id="status"></p>
+<p id="bytes"></p>
+
+<script>
+    function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        if (!file) {
+            alert("Please select a file first.");
+            return;
+        }
+
+        const progressBar = document.getElementById('progressBar');
+        const status = document.getElementById('status');
+        const bytes = document.getElementById('bytes');
+
+        // 1. Create a new XMLHttpRequest
+        const xhr = new XMLHttpRequest();
+
+        // 2. Add an event listener for the 'progress' event on the upload
+        xhr.upload.addEventListener('progress', e => {
+            if (e.lengthComputable) {
+                const percentComplete = Math.round((e.loaded / e.total) * 100);
+                progressBar.value = percentComplete;
+                status.textContent = percentComplete + '%';
+                bytes.textContent = `${e.loaded} of ${e.total} bytes uploaded.`;
+            }
+        });
+
+        // 3. Add event listeners for completion and errors
+        xhr.addEventListener('load', () => {
+            status.textContent = 'Upload Complete!';
+            progressBar.value = 100;
+        });
+        xhr.addEventListener('error', () => {
+            status.textContent = 'Upload Failed.';
+        });
+
+        // 4. Prepare the form data
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // 5. Open and send the request
+        xhr.open('POST', '/files/upload', true); // Your Spring Boot endpoint
+        xhr.send(formData);
+    }
+</script>
+
+</body>
+</html>
