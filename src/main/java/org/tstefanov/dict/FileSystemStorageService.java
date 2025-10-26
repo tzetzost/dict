@@ -15,7 +15,6 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.stream.Stream;
 
 @Service
 public class FileSystemStorageService implements StorageService {
@@ -27,15 +26,17 @@ public class FileSystemStorageService implements StorageService {
         this.rootLocation = Paths.get(properties.getLocation());
     }
 
-    @Override
-    public Mono<Void> init() {
-        return Mono.fromRunnable(() -> {
-            try {
-                Files.createDirectories(rootLocation);
-            } catch (IOException e) {
-                throw new StorageException("Could not initialize storage", e);
-            }
-        });
+    @PostConstruct
+    public void init() {
+        try {
+            // For development: clean up previous files on restart.
+            // For production, this line should be removed or commented out.
+            deleteAll().block();
+
+            Files.createDirectories(rootLocation);
+        } catch (IOException e) {
+            throw new StorageException("Could not initialize storage", e);
+        }
     }
 
     @Override
@@ -46,9 +47,8 @@ public class FileSystemStorageService implements StorageService {
             if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
                 return Mono.error(new StorageException("Cannot store file outside current directory."));
             }
-            // transferTo is a non-blocking method, perfect for WebFlux
             return filePart.transferTo(destinationFile);
-        }).then(); // .then() waits for all flatMap operations to complete
+        }).then();
     }
 
     @Override

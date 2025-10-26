@@ -10,11 +10,6 @@ import java.nio.file.Path;
 public interface StorageService {
 
     /**
-     * Initializes the storage.
-     */
-    Mono<Void> init();
-
-    /**
      * Stores a stream of uploaded files.
      * @param fileParts A Flux of FilePart objects to be stored.
      * @return A Mono that completes when all files are stored.

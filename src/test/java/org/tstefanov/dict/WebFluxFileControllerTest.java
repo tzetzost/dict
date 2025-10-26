@@ -2,12 +2,8 @@ package org.tstefanov.dict;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -26,20 +22,11 @@ import static org.mockito.BDDMockito.given;
 @ActiveProfiles("test")
 class WebFluxFileControllerTest {
 
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        @Primary
-        public CommandLineRunner testCommandLineRunner() {
-            return args -> {
-                // Do nothing, preventing the production runner from executing
-            };
-        }
-    }
-
     @Autowired
     private WebTestClient webTestClient;
 
+    // Note: The @MockBean is still needed to isolate the controller from the real file system.
+    // The @PostConstruct method in the real service will not run in this test.
     @MockBean
     private StorageService storageService;
 
@@ -77,9 +64,6 @@ class WebFluxFileControllerTest {
 
     @Test
     void serveFile_shouldReturnFile_whenFileExists() {
-        // Given
-        // This is the definitive fix: Use a real ByteArrayResource that has both
-        // content (for the body) and a description (for the filename).
         Resource resource = new ByteArrayResource("file content".getBytes()) {
             @Override
             public String getFilename() {
@@ -88,7 +72,6 @@ class WebFluxFileControllerTest {
         };
         given(storageService.loadAsResource("test-file.txt")).willReturn(Mono.just(resource));
 
-        // When & Then
         webTestClient.get().uri("/webflux-files/download/test-file.txt")
                 .exchange()
                 .expectStatus().isOk()
@@ -98,10 +81,8 @@ class WebFluxFileControllerTest {
 
     @Test
     void serveFile_shouldReturnNotFound_whenFileDoesNotExist() {
-        // Given
         given(storageService.loadAsResource("not-found.txt")).willReturn(Mono.empty());
 
-        // When & Then
         webTestClient.get().uri("/webflux-files/download/not-found.txt")
                 .exchange()
                 .expectStatus().isNotFound();
